@@ -1,0 +1,107 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'gli'
+require 'cve_monitor'
+require 'cpe23'
+require 'pry'
+
+class App
+  extend GLI::App
+
+  program_desc 'Monitor CVEs for a list of CPEs'
+
+  version CveMonitor::VERSION
+
+  subcommand_option_handling :normal
+  arguments :strict
+
+  desc 'Add CPE(s) to monitor'
+  arg_name 'CPE...'
+  command :add do |c|
+    c.action do |_global_options, _options, args|
+      if args.empty? || args.all?(&:empty?)
+        raise 'Must provide at least one CPE'
+      end
+
+      # TODO: de-duplicate entries.
+      # Need to implement a way of comparing CPEs and determining which one is
+      # more generic. The most generic CPE should be retained.
+      File.open('cpes.txt', 'a') do |file|
+        args.each do |str|
+          cpe = Cpe23.parse(str)
+          file.write("#{cpe.to_str}\n")
+        end
+      end
+    end
+  end
+
+  desc 'Remove monitored CPE(s)'
+  arg_name 'CPE...'
+  command :remove do |c|
+    c.action do |_global_options, _options, args|
+      if args.empty? || args.all?(&:empty?)
+        raise 'Must provide at least one CPE'
+      end
+
+      # TODO: Should entries be removed if the CPE matches, or only if they are
+      # identical?
+      args.each do |str|
+        cpe = Cpe23.parse(str)
+        @cpes.reject! { |e| e == cpe }
+      end
+      File.open('cpes.txt', 'w') do |file|
+        @cpes.each do |cpe|
+          file.write("#{cpe.to_str}\n")
+        end
+      end
+    end
+  end
+
+  desc 'Displays monitored CPEs'
+  command :list do |c|
+    c.action do |_global_options, _options, _args|
+      @cpes.each do |cpe|
+        puts cpe.to_str
+      end
+    end
+  end
+
+  desc 'Check for CVEs against monitored CPEs'
+  command :check do |c|
+    c.action do |_global_options, _options, _args|
+      # TODO: Implement checking for CVEs.
+      # TODO: Add options for how far back to look.
+    end
+  end
+
+  pre do |_global, _command, _options, _args|
+    # Pre logic here
+    # Return true to proceed; false to abort and not call the
+    # chosen command
+    # Use skips_pre before a command to skip this block
+    # on that command only
+    @cpes = if File.exist?('cpes.txt')
+              File.open('cpes.txt', 'r').map do |line|
+                Cpe23.parse(line)
+              end
+            else
+              []
+            end
+    true
+  end
+
+  post do |global, command, options, args|
+    # Post logic here
+    # Use skips_post before a command to skip this
+    # block on that command only
+  end
+
+  on_error do |_exception|
+    # Error logic here
+    # return false to skip default error handling
+    true
+  end
+end
+
+exit App.run(ARGV)

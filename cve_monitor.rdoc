@@ -1,0 +1,5 @@
+= cve_monitor
+
+Generate this with
+    cve_monitor _doc
+After you have described your command line interface
