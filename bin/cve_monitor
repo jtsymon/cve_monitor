@@ -4,6 +4,9 @@
 require 'gli'
 require 'cve_monitor'
 require 'cpe23'
+require 'open-uri'
+require 'zlib'
+require 'json'
 require 'pry'
 
 class App
@@ -70,8 +73,29 @@ class App
   desc 'Check for CVEs against monitored CPEs'
   command :check do |c|
     c.action do |_global_options, _options, _args|
-      # TODO: Implement checking for CVEs.
       # TODO: Add options for how far back to look.
+      cve_uri = 'https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-recent.json.gz'
+      cves = URI.open(cve_uri) do |f|
+        begin
+          gz = Zlib::GzipReader.new(f)
+          JSON.parse(gz.read)
+        ensure
+          gz&.close
+        end
+      end
+      cves['CVE_Items']&.each do |item|
+        cve = item['cve']
+        cve_id = cve.walk('CVE_data_meta', 'ID')
+        cpes = item.walk('configurations', 'nodes')&.flat_map do |node|
+          CveMonitor.parse_node(node)
+        end
+        matching = cpes.select do |cpe|
+          @cpes.any? { |e| e == cpe }
+        end
+        next if matching.empty?
+
+        puts "https://nvd.nist.gov/vuln/detail/#{cve_id}", matching, "\n"
+      end
     end
   end
 
