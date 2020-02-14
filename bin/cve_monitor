@@ -7,7 +7,6 @@ require 'cpe23'
 require 'open-uri'
 require 'zlib'
 require 'json'
-require 'pry'
 
 class App
   extend GLI::App
