@@ -11,7 +11,7 @@ require 'pry'
 
 class App
   extend GLI::App
-  extend CveMonitor
+  include CveMonitor
 
   program_desc 'Monitor CVEs for a list of CPEs'
 
@@ -21,53 +21,36 @@ class App
   arguments :strict
 
   desc 'Add CPE(s) to monitor'
-  arg_name 'CPE...'
+  arg_name '[CPE...]'
   command :add do |c|
     c.action do |_global_options, _options, args|
-      if args.empty? || args.all?(&:empty?)
-        raise 'Must provide at least one CPE'
-      end
+      args = [CpeBuilder.build] if args.empty? || args.all?(&:empty?)
 
       # TODO: de-duplicate entries.
       # Need to implement a way of comparing CPEs and determining which one is
       # more generic. The most generic CPE should be retained.
-      File.open('cpes.txt', 'a') do |file|
-        args.each do |str|
-          cpe = Cpe23.parse(str)
-          file.write("#{cpe.to_str}\n")
-        end
-      end
+      @cpe_list.add! args
+      @cpe_list.save!
     end
   end
 
   desc 'Remove monitored CPE(s)'
-  arg_name 'CPE...'
+  arg_name '[CPE...]'
   command :remove do |c|
     c.action do |_global_options, _options, args|
-      if args.empty? || args.all?(&:empty?)
-        raise 'Must provide at least one CPE'
-      end
+      args = [CpeBuilder.build] if args.empty? || args.all?(&:empty?)
 
       # TODO: Should entries be removed if the CPE matches, or only if they are
       # identical?
-      args.each do |str|
-        cpe = Cpe23.parse(str)
-        @cpes.reject! { |e| e == cpe }
-      end
-      File.open('cpes.txt', 'w') do |file|
-        @cpes.each do |cpe|
-          file.write("#{cpe.to_str}\n")
-        end
-      end
+      @cpe_list.remove! args
+      @cpe_list.save!
     end
   end
 
   desc 'Displays monitored CPEs'
   command :list do |c|
     c.action do |_global_options, _options, _args|
-      @cpes.each do |cpe|
-        puts cpe.to_str
-      end
+      puts @cpe_list.to_s
     end
   end
 
@@ -77,14 +60,14 @@ class App
     c.desc 'Checks against recent CVE list'
     c.command :recent do |c1|
       c1.action do |_global_options, _options, _args|
-        check('recent')
+        CveFeed.new('recent').check(@cpe_list)
       end
     end
 
     c.desc 'Check against modified CVE list'
     c.command :modified do |c1|
       c1.action do |_global_options, _options, _args|
-        check('modified')
+        CveFeed.new('modified').check(@cpe_list)
       end
     end
 
@@ -93,7 +76,7 @@ class App
       raise 'Must specify at least one year' unless args&.any?
 
       args.each do |year|
-        check(year)
+        CveFeed.new(year).check(@cpe_list)
       end
     end
   end
@@ -104,13 +87,7 @@ class App
     # chosen command
     # Use skips_pre before a command to skip this block
     # on that command only
-    @cpes = if File.exist?('cpes.txt')
-              File.open('cpes.txt', 'r').map do |line|
-                Cpe23.parse(line)
-              end
-            else
-              []
-            end
+    @cpe_list = CpeList.new('cpes.txt')
     true
   end
 
