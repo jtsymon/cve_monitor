@@ -5,5 +5,12 @@ vulnerabilties registered against them from NIST's CVE feed.
 
 Uses https://github.com/jtsymon/cpe23 for parsing and comparing CPEs.
 
-:include:cve_monitor.rdoc
+= Installation
 
+gem install cve_monitor
+
+= License
+
+The gem is available as open source under the terms of the {MIT License}[https://opensource.org/licenses/MIT].
+
+:include:cve_monitor.rdoc
