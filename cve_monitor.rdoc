@@ -1,5 +1,51 @@
-= cve_monitor
+== cve_monitor - Monitor CVEs for a list of CPEs
 
-Generate this with
-    cve_monitor _doc
-After you have described your command line interface
+v0.0.1
+
+=== Global Options
+=== --help
+Show this message
+
+
+
+=== --version
+Display the program version
+
+
+
+=== Commands
+==== Command: <tt>add  [CPE...]</tt>
+Add CPE(s) to monitor
+
+
+==== Command: <tt>check  year...</tt>
+Check for CVEs against monitored CPEs
+
+
+===== Commands
+====== Command: <tt>modified </tt>
+Check against modified CVE list
+
+
+====== Command: <tt>recent </tt>
+Checks against recent CVE list
+
+
+==== Command: <tt>help  command</tt>
+Shows a list of commands or help for one command
+
+Gets help for the application or its commands. Can also list the commands in a way helpful to creating a bash-style completion function
+===== Options
+===== -c
+List commands one per line, to assist with shell completion
+
+
+
+==== Command: <tt>list </tt>
+Displays monitored CPEs
+
+
+==== Command: <tt>remove  [CPE...]</tt>
+Remove monitored CPE(s)
+
+

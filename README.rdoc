@@ -1,6 +1,9 @@
 = cve_monitor
 
-Describe your project here
+Maintain a list of software/devices you care about (CPEs), and identify any new
+vulnerabilties registered against them from NIST's CVE feed.
+
+Uses https://github.com/jtsymon/cpe23 for parsing and comparing CPEs.
 
 :include:cve_monitor.rdoc
 
