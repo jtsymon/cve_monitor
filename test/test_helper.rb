@@ -1,9 +1,6 @@
-require 'test/unit'
+# frozen_string_literal: true
 
-# Add test libraries you want to use here, e.g. mocha
+$LOAD_PATH.unshift File.expand_path('../lib', __dir__)
+require 'cve_monitor'
 
-class Test::Unit::TestCase
-
-  # Add global extensions to the test case class here
-
-end
+require 'minitest/autorun'
